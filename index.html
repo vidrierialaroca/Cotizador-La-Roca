@@ -26,6 +26,7 @@ button{font:inherit;cursor:pointer;border-radius:8px;padding:8px 14px;border:1px
 table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;border-bottom:1px solid var(--bd);text-align:left}th{font-size:11px;color:var(--mu);font-weight:500}.rt{text-align:right}
 @media(max-width:600px){.it{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.st{grid-template-columns:1fr 1fr}}
 .act{background:var(--pb)!important;color:#fff!important;border-color:var(--pb)!important}.danger{color:var(--rd)}
+.ims{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.th{position:relative;width:90px;height:90px;border:1px solid var(--bd);border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}.th img{width:100%;height:100%;object-fit:cover}.th button{position:absolute;top:2px;right:2px;padding:0 6px;line-height:1.3}
 </style></head><body><div id="app"><p class="mu">Cargando…</p></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -69,29 +70,32 @@ function rows(){
   return `<div class="r" onclick="nav('det',Q.find(x=>x.id==='${q.id}'))"><span class="n">Cot.${q.num}</span><span style="flex:1;min-width:140px">${E(q.cliente)}${q.interm?' <span class="mu">(intermediario)</span>':''}<br><span class="mu">${fc(q.fecha)} · ${E(q.vendedor||'')}</span></span><span>${tt.length>1?'Desde '+M(Math.min(...tt)):M(tt[0])}</span><span class="bd ${est(q)}">${LB[est(q)]}</span></div>`}).join(''):'<p class="mu" style="padding:12px">No hay cotizaciones que coincidan.</p>';
 }
 
-function nueva(q){F=q?{...JSON.parse(JSON.stringify(q)),id:null,num:null,estado:'pendiente',hist:[],fecha:hoy()}:{cliente:'',tel:'',interm:false,obra:'',items:[{desc:'',m1:'',m2:'',cant:1,precio:'',op:1}],totalizar:true,pago:'100% anticipado',metodo:'Efectivo o transferencia',dias:'',validez:15,iva:true,inst:false,dom:false,vendedor:'',obs:'',estado:'pendiente',hist:[]};if(q)F.items.forEach(nm);nav('form')}
+function nueva(q){F=q?{...JSON.parse(JSON.stringify(q)),id:null,num:null,estado:'pendiente',hist:[],fecha:hoy()}:{cliente:'',tel:'',interm:false,obra:'',items:[{desc:'',m1:'',m2:'',cant:1,precio:'',op:1}],totalizar:true,pago:'100% anticipado',metodo:'Efectivo o transferencia',dias:'',validez:15,iva:true,inst:false,dom:false,vendedor:'',obs:'',imgs:[],estado:'pendiente',hist:[]};if(q)F.items.forEach(nm);F.imgs=(F.imgs||[]).map(id=>({id}));nav('form')}
 const I=(l,k,t)=>`<div><label>${l}</label><input type="${t||'text'}" value="${E(F[k])}" oninput="F.${k}=this.value"></div>`;
-const itRow=(i,x)=>`<div class="it"><div><label>Producto</label><input value="${E(i.desc)}" oninput="F.items[${x}].desc=this.value"></div><div><label>Grosor</label><input list="gr${x}" placeholder="6 mm" value="${E(i.gr)}" oninput="F.items[${x}].gr=this.value"><datalist id="gr${x}">${['3 mm','4 mm','5 mm','6 mm','8 mm','10 mm','12 mm'].map(g=>`<option>${g}</option>`).join('')}</datalist></div><div><label>Medidas (ancho X alto)</label><div style="display:flex;gap:4px;align-items:center"><input inputmode="decimal" placeholder="Ancho" value="${E(i.m1)}" oninput="F.items[${x}].m1=this.value"><span>X</span><input inputmode="decimal" placeholder="Alto" value="${E(i.m2)}" oninput="F.items[${x}].m2=this.value"><select style="width:auto" onchange="F.items[${x}].u=this.value">${['mts','cm','pulgadas'].map(u=>`<option ${(i.u||'mts')===u?'selected':''}>${u}</option>`).join('')}</select></div></div><div><label>Cant.</label><input type="number" value="${i.cant}" oninput="F.items[${x}].cant=this.value;tt()"></div><div><label>Precio unit.</label><input type="number" step="0.01" value="${i.precio}" oninput="F.items[${x}].precio=this.value;tt()"></div><div><label>Opción</label><input type="number" min="1" value="${i.op||1}" oninput="F.items[${x}].op=this.value||1;tt()"></div><button onclick="F.items.splice(${x},1);ri()" aria-label="Quitar">✕</button></div>`;
+const itRow=(i,x)=>`<div class="it"><div><label>Producto</label><input value="${E(i.desc)}" oninput="F.items[${x}].desc=this.value"></div><div><label>Grosor</label><input list="gr${x}" placeholder="6 mm" value="${E(i.gr)}" oninput="F.items[${x}].gr=this.value"><datalist id="gr${x}">${['3 mm','4 mm','5 mm','6 mm','8 mm','10 mm','12 mm'].map(g=>`<option>${g}</option>`).join('')}</datalist></div><div><label>Medidas (ancho X alto)</label><div style="display:flex;gap:4px;align-items:center"><input inputmode="decimal" placeholder="Ancho" value="${E(i.m1)}" oninput="F.items[${x}].m1=this.value"><span>X</span><input inputmode="decimal" placeholder="Alto" value="${E(i.m2)}" oninput="F.items[${x}].m2=this.value"><select style="width:auto" onchange="F.items[${x}].u=this.value">${['mts','cms','pulgadas'].map(u=>`<option ${(i.u||'mts')===u?'selected':''}>${u}</option>`).join('')}</select></div></div><div><label>Cant.</label><input type="number" value="${i.cant}" oninput="F.items[${x}].cant=this.value;tt()"></div><div><label>Precio unit.</label><input type="number" step="0.01" value="${i.precio}" oninput="F.items[${x}].precio=this.value;tt()"></div><div><label>Opción</label><input type="number" min="1" value="${i.op||1}" oninput="F.items[${x}].op=this.value||1;tt()"></div><button onclick="F.items.splice(${x},1);ri()" aria-label="Quitar">✕</button></div>`;
 function ri(){$('#its').innerHTML=F.items.map(itRow).join('');tt()}
 function tt(){const g=grupos(F),k=Object.keys(g);$('#tot').innerHTML=k.map(o=>(k.length>1?'Opción '+o+': ':'Total: ')+M(g[o].reduce((s,i)=>s+sub(i),0))).join('<br>')}
+function rm(){const e=$('#ims');if(!e)return;e.innerHTML=F.imgs.map((m,i)=>{const s=m.d||IMG[m.id];return `<div class="th">${s?`<img src="${s}">`:'<span class="mu">…</span>'}<button onclick="F.imgs.splice(${i},1);rm()" aria-label="Quitar">✕</button></div>`}).join('')||'<p class="h">Sin imágenes.</p>';F.imgs.forEach(m=>{if(m.id&&!m.d&&!IMG[m.id])getImg(m.id).then(rm).catch(()=>{})})}
 function rForm(){
  A.innerHTML=hdr(F.id?'Editar Cot.'+F.num:'Nueva cotización',1)+`<div class="card"><div class="g2">${I('Cliente / atención','cliente')}<div><label>Teléfono</label><input type="tel" inputmode="numeric" placeholder="2264-0238" value="${E(F.tel)}" oninput="F.tel=ftl(this.value);this.value=F.tel"></div></div>
  <label class="ck"><input type="checkbox" ${F.interm?'checked':''} onchange="F.interm=this.checked"> Es intermediario (no tengo el nombre del cliente final)</label></div>
  <div class="card"><b>Productos</b><div id="its">${F.items.map(itRow).join('')}</div><button class="b2" onclick="F.items.push({desc:'',m1:'',m2:'',cant:1,precio:'',op:1});ri()">+ Agregar producto</button><div class="tot" id="tot"></div>
  <label class="ck"><input type="checkbox" ${F.totalizar?'checked':''} onchange="F.totalizar=this.checked"> Mostrar total en el documento</label><p class="h">Opción: deja 1 en todos si el cliente compra los productos juntos (se suman en un solo total). Si le das alternativas para que escoja una, ponles Opción 1, 2, 3… y cada opción se suma por separado.</p></div>
+ <div class="card"><b>Imágenes de referencia</b> <span class="mu">(opcional, máximo 4; salen en el PDF debajo del total)</span><div class="ims" id="ims"></div><input type="file" id="fi" accept="image/*" multiple hidden onchange="addImgs(this.files)"><button class="b2" onclick="$('#fi').click()">+ Agregar imágenes</button></div>
  <div class="card"><div class="g3"><div><label>Forma de pago</label><select onchange="F.pago=this.value">${['100% anticipado','85% anticipado / 15% contraentrega'].map(p=>`<option ${F.pago===p?'selected':''}>${p}</option>`).join('')}</select></div><div><label>Método de pago</label><select onchange="F.metodo=this.value">${['Efectivo o transferencia','Solo efectivo','Solo transferencia'].map(p=>`<option ${(F.metodo||'Efectivo o transferencia')===p?'selected':''}>${p}</option>`).join('')}</select></div>${I('Días hábiles de entrega','dias','number')}${I('Validez (días)','validez','number')}<div><label>Vendedor</label><input list="vd" value="${E(F.vendedor)}" oninput="F.vendedor=this.value"><datalist id="vd"><option>Adrián</option><option>Diana</option></datalist></div></div>
  <label class="ck"><input type="checkbox" ${F.iva?'checked':''} onchange="F.iva=this.checked"> Precios incluyen IVA</label>
- <label class="ck"><input type="checkbox" ${F.dom?'checked':''} onchange="F.dom=this.checked"> Incluye servicio a domicilio</label>
- <label class="ck"><input type="checkbox" ${F.inst?'checked':''} onchange="F.inst=this.checked;rForm()"> Incluye instalación</label>
+ ${F.inst?'':`<label class="ck"><input type="checkbox" ${F.dom?'checked':''} onchange="F.dom=this.checked"> Incluye servicio a domicilio</label>`}
+ <label class="ck"><input type="checkbox" ${F.inst?'checked':''} onchange="F.inst=this.checked;if(F.inst)F.dom=false;rForm()"> Incluye instalación</label>
  ${F.inst?`<div style="margin-top:10px">${I('Lugar de obra (aproximado)','obra')}</div>`:''}
  <div style="margin-top:10px"><label>Observaciones</label><textarea rows="2" oninput="F.obs=this.value">${E(F.obs)}</textarea></div></div>
- <button class="b1" onclick="guardar()">Guardar cotización</button><div class="err" id="msg"></div>`;tt();
+ <button class="b1" onclick="guardar()">Guardar cotización</button><div class="err" id="msg"></div>`;tt();rm();
 }
 async function guardar(){
  if(!F.cliente.trim()||!F.items.some(i=>i.desc.trim()&&+i.precio>0))return msg('Falta el cliente o al menos un producto con precio.');
  msg('Guardando…');
  try{
-  const d={cliente:F.cliente.trim(),tel:ft(F.tel),interm:F.interm,obra:F.inst?F.obra:'',items:F.items.filter(i=>i.desc.trim()),totalizar:F.totalizar,pago:F.pago,metodo:F.metodo||'Efectivo o transferencia',dias:F.dias,validez:+F.validez||15,iva:F.iva,inst:F.inst,dom:F.dom,vendedor:F.vendedor,obs:F.obs};
+  const ids=[];for(const m of F.imgs){if(!m.id){msg('Subiendo imágenes a Drive…');const r=await api('upimg',{data:m.d});m.id=r.id;IMG[r.id]=m.d}ids.push(m.id)}
+  const d={cliente:F.cliente.trim(),tel:ft(F.tel),interm:F.interm,obra:F.inst?F.obra:'',items:F.items.filter(i=>i.desc.trim()),totalizar:F.totalizar,pago:F.pago,metodo:F.metodo||'Efectivo o transferencia',dias:F.dias,validez:+F.validez||15,iva:F.iva,inst:F.inst,dom:F.inst?false:F.dom,vendedor:F.vendedor,obs:F.obs,imgs:ids};
   if(F.id){await db.doc('cotizaciones/'+F.id).update(d);cur={...F,...d}}
   else{
    const ref=db.doc('meta/correlativo');let n=0;
@@ -112,10 +116,13 @@ function rDet(){
  <div class="card"><b>Actualizar estado</b><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">${k.length>1?`<select id="op" style="width:auto"><option value="">¿Qué opción eligió?</option>${k.map(o=>`<option value="${o}" ${q.opAprob==o?'selected':''}>Opción ${o}</option>`).join('')}</select>`:''}
  <button class="ok ${q.estado==='aprobada'?'act':''}" onclick="setE('aprobada')">Aprobada</button><button class="${q.estado==='rechazada'?'act':''}" onclick="setE('rechazada')">Rechazada</button><button class="${q.estado==='pendiente'?'act':''}" onclick="setE('pendiente')">Pendiente</button></div><div class="err" id="msg"></div>${fa?`<p class="h">Entrega estimada: ${fl(fa)} (${q.dias} días hábiles desde la aprobación)</p>`:''}</div>
  <div class="card"><table><tr><th>Descripción</th><th>Medidas</th><th class="rt">Cant.</th><th class="rt">Precio</th></tr>${k.map(o=>(k.length>1?`<tr><td colspan="4"><b>Opción ${o}${q.opAprob==o?' · elegida':''}</b></td></tr>`:'')+g[o].map(i=>`<tr><td>${E(i.desc)}${i.gr?' · '+E(i.gr):''}</td><td>${E(med(i))}</td><td class="rt">${i.cant}</td><td class="rt">${M(sub(i))}</td></tr>`).join('')+(q.totalizar&&g[o].length>1?`<tr><td colspan="3" class="rt"><b>Precio total${k.length>1?' opción '+o:''}</b></td><td class="rt"><b>${M(g[o].reduce((s,i)=>s+sub(i),0))}</b></td></tr>`:'')).join('')}</table>
- <p class="mu">${q.iva?'Incluye IVA':'NO incluye IVA'} · ${q.inst?'Incluye instalación':'NO incluye instalación'} · ${q.dom?'Incluye domicilio':'NO incluye domicilio'} · ${q.metodo?E(q.metodo)+' · ':''}${E(q.pago)} · ${q.dias||'—'} días hábiles${q.obra?' · Obra: '+E(q.obra):''}</p>${q.obs?`<p>${E(q.obs)}</p>`:''}</div>
+ <p class="mu">${[q.iva?'Incluye IVA':'NO incluye IVA',q.inst?'Incluye instalación':'NO incluye instalación',q.inst?'':(q.dom?'Incluye domicilio':'NO incluye domicilio')].filter(Boolean).join(' · ')} · ${q.metodo?E(q.metodo)+' · ':''}${E(q.pago)} · ${q.dias||'—'} días hábiles${q.obra?' · Obra: '+E(q.obra):''}</p>${q.obs?`<p>${E(q.obs)}</p>`:''}</div>
+ ${(q.imgs||[]).length?'<div class="card"><b>Imágenes de referencia</b><div class="ims" id="dims"></div></div>':''}
  <div class="card"><b>Historial</b>${(q.hist||[]).map(h=>`<div class="mu">${fc(h.f)} — ${LB[h.e]}${h.op?' (opción '+h.op+')':''}</div>`).join('')}</div>`;
+ dimgs(q);
 }
-function editar(){F=JSON.parse(JSON.stringify(cur));F.items.forEach(nm);nav('form')}
+function dimgs(q){const e=$('#dims');if(!e)return;e.innerHTML=q.imgs.map(id=>IMG[id]?`<div class="th"><img src="${IMG[id]}"></div>`:'<div class="th"><span class="mu">…</span></div>').join('');q.imgs.filter(id=>!IMG[id]).forEach(id=>getImg(id).then(()=>{if(view==='det'&&cur&&cur.id===q.id)dimgs(cur)}).catch(()=>{}))}
+function editar(){F=JSON.parse(JSON.stringify(cur));F.items.forEach(nm);F.imgs=(F.imgs||[]).map(id=>({id}));nav('form')}
 function cambiarNx(){$('#nxf').innerHTML='<input id="nxi" type="number" value="'+nx+'" style="width:110px"> <button onclick="setNx()">Guardar</button> <button onclick="$(\'#nxf\').innerHTML=\'\'">Cancelar</button>'}
 async function setNx(){const n=parseInt($('#nxi').value),mx=Math.max(0,...Q.map(q=>q.num));if(!n||n<=mx){$('#nxm').textContent=' Debe ser mayor que la última cotización (Cot.'+mx+').';return}try{await db.doc('meta/correlativo').set({next:n});$('#nxf').innerHTML='';$('#nxm').textContent=''}catch(e){$('#nxm').textContent=' No se pudo guardar.'}}
 async function setE(e){
@@ -134,21 +141,38 @@ async function pdf(q){
  y+=5;F_('bold',10);T('Tel. 2264-0238',W/2,y,{align:'center'});y+=4;d.line(L,y,R,y);
  y+=9;F_('normal',12);T('San Salvador, '+fl(q.fecha),L,y);
  y+=8;F_('bold',12);T('Cot.'+q.num,R,y,{align:'right'});
- y+=10;F_('normal',11);const aw=d.getTextWidth('Atención: ');T('Atención: ',L,y);F_('bold',11);T(q.cliente,L+aw,y);F_('normal',10);
- if(q.tel){y+=6;T('Tel: '+ft(q.tel),L,y)}if(q.obra){y+=6;T('Lugar de obra: '+q.obra,L,y)}
+ y+=10;F_('normal',12);const aw=d.getTextWidth('Atención: ');T('Atención: ',L,y);F_('bold',12);T(q.cliente,L+aw,y);F_('normal',12);
+ if(q.tel){y+=6.5;T('Tel: '+ft(q.tel),L,y)}if(q.obra){y+=6.5;T('Lugar de obra: '+q.obra,L,y)}
  y+=12;F_('bolditalic',12);T('Gustosamente le estamos cotizando nuestros siguientes productos:',L,y);y+=9;
  const g=grupos(q),k=Object.keys(g),chk=h=>{if(y+h>278){d.addPage();y=20}};
  k.forEach(o=>{
   if(k.length>1){chk(12);F_('bold',11);T('Opción '+o,L,y);y+=7}
   g[o].forEach((i,n)=>{chk(24);F_('normal',12);
    const t=d.splitTextToSize((+i.cant||1)+' – '+i.desc+(i.gr?' de '+i.gr:'')+(med(i)?' medidas de '+med(i):''),R-L);T(t,L,y);y+=5.2*t.length+6;
-   const p=M(sub(i));F_('bold',12);const nd=Math.max(3,Math.floor((R-L-8-d.getTextWidth('Precio ')-d.getTextWidth(p))/d.getTextWidth('.')));
-   T('Precio '+'.'.repeat(nd)+p,L+8,y);y+=9});
-  if(q.totalizar&&g[o].length>1){chk(12);F_('bold',12);const p=M(g[o].reduce((s,i)=>s+sub(i),0)),lb='Precio total'+(k.length>1?' opción '+o:'')+' ',nd=Math.max(3,Math.floor((R-L-8-d.getTextWidth(lb)-d.getTextWidth(p))/d.getTextWidth('.')));T(lb+'.'.repeat(nd)+p,L+8,y);y+=9}
+   const p=M(sub(i));F_('bold',12);const nd=Math.max(3,Math.floor((R-L-d.getTextWidth('Precio ')-d.getTextWidth(p))/d.getTextWidth('.')));
+   T('Precio '+'.'.repeat(nd)+p,L,y);y+=9});
+  if(q.totalizar&&g[o].length>1){chk(12);F_('bold',12);const p=M(g[o].reduce((s,i)=>s+sub(i),0)),lb='Precio total'+(k.length>1?' opción '+o:'')+' ',nd=Math.max(3,Math.floor((R-L-d.getTextWidth(lb)-d.getTextWidth(p))/d.getTextWidth('.')));T(lb+'.'.repeat(nd)+p,L,y);y+=9}
  });
- const B=[q.iva?'Precio incluye IVA':'Precio NO incluye IVA',q.inst?'Precio incluye instalación':'Precio NO incluye instalación',q.dom?'Incluye servicio a domicilio':'NO incluye servicio a domicilio',q.metodo&&(({'Efectivo o transferencia':'Pago únicamente efectivo o transferencia','Solo efectivo':'Pago únicamente en efectivo','Solo transferencia':'Pago únicamente por transferencia'})[q.metodo]||q.metodo),'Forma de pago: '+q.pago,q.dias&&'Tiempo de entrega: '+q.dias+' días hábiles '+(String(q.pago).startsWith('100%')?'después de cancelado':'después del anticipo'),'Cotización válida: '+(q.validez||15)+' días'].filter(Boolean);
- chk(B.length*6+30);y+=2;F_('normal',11);B.forEach(s=>{T('•  '+s,L+4,y);y+=6});
- if(q.obs){y+=3;const t=d.splitTextToSize('Observaciones: '+q.obs,R-L);chk(t.length*5+20);T(t,L,y);y+=5*t.length}
+ const IM=(await Promise.all((q.imgs||[]).map(id=>getImg(id).catch(()=>null)))).filter(Boolean);
+ if(IM.length){y+=4;const n=IM.length,c=n===1?1:2,bw=n===1?100:80,bh=n===1?75:58,gp=8;
+  for(let i=0;i<n;i+=c){const r=IM.slice(i,i+c);chk(bh+6);const xs=(W-r.length*bw-(r.length-1)*gp)/2;
+   r.forEach((s,j)=>{const p=d.getImageProperties(s),sc=Math.min(bw/p.width,bh/p.height),w=p.width*sc,h=p.height*sc;d.addImage(s,'JPEG',xs+j*(bw+gp)+(bw-w)/2,y+(bh-h)/2,w,h)});y+=bh+6}}
+ const PAGO={'Efectivo o transferencia':'Pago únicamente efectivo o transferencia','Solo efectivo':'Pago únicamente en efectivo','Solo transferencia':'Pago únicamente por transferencia'};
+ const ent=String(q.pago).startsWith('100%')?'después de cancelado':'después del anticipo';
+ const B=[
+  [[q.iva?'Precio incluye IVA':'Precio NO incluye IVA','bolditalic']],
+  [[q.inst?'Precio incluye instalación':'Precio NO incluye instalación','bolditalic']],
+  q.inst?null:q.dom?[['Incluye servicio a domicilio','bolditalic']]:[['NO incluye servicio a domicilio','bolditalic']],
+  q.metodo&&[[PAGO[q.metodo]||q.metodo,'normal']],
+  [['Forma de pago:  ','normal'],[q.pago,'bold']],
+  q.dias&&[['Tiempo de entrega:  ','normal'],[q.dias+' días hábiles '+ent,'bold']],
+  [['Cotización válida:  ','normal'],[(q.validez||15)+' días','bold']]
+ ].filter(Boolean);
+ chk(B.length*7+30);y+=2;
+ B.forEach(p=>{d.setFillColor(0);d.triangle(L+4,y-2.8,L+4,y-0.2,L+6.8,y-1.5,'F');let x=L+10;p.forEach(([t,s])=>{F_(s,12);T(t,x,y);x+=d.getTextWidth(t)});y+=7});
+ if(q.obs){const N=q.obs.split('\n').map(s=>s.trim()).filter(Boolean);y+=4;F_('bold',12);
+  if(N.length===1){const w=d.getTextWidth('Nota: ');chk(16);T('Nota: ',L,y);F_('normal',12);const t=d.splitTextToSize(N[0],R-L-w);T(t,L+w,y);y+=5.2*t.length}
+  else if(N.length){chk(20);T('Nota:',L,y);y+=7;F_('normal',12);N.forEach(s=>{const t=d.splitTextToSize(s,R-L-10);chk(5.2*t.length+4);T('•',L+4,y);T(t,L+10,y);y+=5.2*t.length+1.5})}}
  y+=10;chk(20);F_('normal',12);T('Atendido por,',R,y,{align:'right'});F_('bold',12);T(q.vendedor||'',R,y+6,{align:'right'});
  try{await dl.save({filename:'Cot-'+q.num+'_'+q.cliente.replace(/[^\w]+/g,'-').slice(0,30)+'.pdf',data:d.output('arraybuffer')})}catch(e){}
 }
@@ -162,6 +186,12 @@ const api=async(op,d)=>{
  const j=await r.json();if(!j.ok)throw new Error(j.error||'Error del servidor');return j;
 };
 async function borrar(){if(!confirm('¿Eliminar la Cot.'+cur.num+'? Esta acción no se puede deshacer.'))return;try{await db.doc('cotizaciones/'+cur.id).delete();nav('list')}catch(e){msg('No se pudo eliminar: '+(e.message||e))}}
+
+// Imágenes: se reducen en el navegador y se guardan en Google Drive (la cotización solo guarda el ID)
+const IMG={};
+async function getImg(id){if(!IMG[id])IMG[id]=(await api('getimg',{id})).data;return IMG[id]}
+const redim=f=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.8))};im.onerror=no;im.src=r.result};r.onerror=no;r.readAsDataURL(f)});
+async function addImgs(fs){for(const f of [...fs]){if(F.imgs.length>=4){msg('Máximo 4 imágenes.');break}try{F.imgs.push({d:await redim(f)})}catch(e){msg('No se pudo leer una imagen.')}}rm();$('#fi').value=''}
 
 let cache={cot:[],next:8100},last='',first=true,ver=0;const S={cot:null,corr:null,err:null};
 const emit=()=>{S.cot&&S.cot();S.corr&&S.corr()};
