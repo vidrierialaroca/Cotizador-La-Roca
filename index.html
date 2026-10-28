@@ -44,6 +44,7 @@ const est=q=>q.estado==='pendiente'&&hoy()>add(q.fecha,+q.validez||15)?'vencida'
 const sub=i=>(+i.cant||0)*(+i.precio||0);
 const ft=s=>{const x=String(s||'').trim(),d=x.replace(/\D/g,'');if(d.length===8)return d.slice(0,4)+'-'+d.slice(4);if(d.length===10)return '('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6);if(d.length===11&&d[0]==='1')return '('+d.slice(1,4)+') '+d.slice(4,7)+'-'+d.slice(7);if(d.length===11&&d.startsWith('503'))return '+503 '+d.slice(3,7)+'-'+d.slice(7);return x};
 const ftl=s=>{const d=String(s||'').replace(/\D/g,'');return d.length<=8?(d.length>4?d.slice(0,4)+'-'+d.slice(4):d):ft(s)};
+const tels=q=>[q.tel,q.tel2].filter(x=>x&&String(x).trim()).map(ft).join('; ');
 const med=i=>i.dia?(i.m1?i.m1+' '+(i.u||'mts')+' de diámetro':''):(i.m1!==undefined||i.m2!==undefined)?[i.m1,i.m2].filter(Boolean).join(' X ')+((i.m1||i.m2)?' '+(i.u||'mts'):''):(i.medidas||'');
 const nm=i=>{if(i.m1===undefined){const m=(i.medidas||'').match(/([\d.,]+)\s*[xX×]\s*([\d.,]+)/);i.m1=m?m[1]:'';i.m2=m?m[2]:''}};
 const grupos=q=>{const g={};q.items.forEach(i=>{(g[i.op||1]=g[i.op||1]||[]).push(i)});return g};
@@ -65,19 +66,19 @@ function rows(){
  const c={pendiente:0,aprobada:0,rechazada:0,vencida:0};Q.forEach(q=>c[est(q)]++);
  $('#cnt').innerHTML=Object.keys(c).map(k=>`<div><small>${LB[k]}s</small><b>${c[k]}</b></div>`).join('');
  const t=FQ.toLowerCase();
- const L=Q.filter(q=>(!FE||est(q)===FE)&&(!t||(q.cliente+' '+(q.sres||'')+' '+q.tel+' '+q.num+' '+q.vendedor).toLowerCase().includes(t))).sort((a,b)=>b.num-a.num);
+ const L=Q.filter(q=>(!FE||est(q)===FE)&&(!t||(q.cliente+' '+(q.sres||'')+' '+q.tel+' '+(q.tel2||'')+' '+q.num+' '+q.vendedor).toLowerCase().includes(t))).sort((a,b)=>b.num-a.num);
  $('#rows').innerHTML=!loaded?'<p class="mu" style="padding:12px">Cargando…</p>':L.length?L.map(q=>{const tt=Object.values(grupos(q)).map(g=>g.reduce((s,i)=>s+sub(i),0));
   return `<div class="r" onclick="nav('det',Q.find(x=>x.id==='${q.id}'))"><span class="n">Cot.${q.num}</span><span style="flex:1;min-width:140px">${E(q.cliente)}${q.interm?' <span class="mu">(intermediario)</span>':''}<br><span class="mu">${fc(q.fecha)} · ${E(q.vendedor||'')}</span></span><span>${tt.length>1?'Desde '+M(Math.min(...tt)):M(tt[0])}</span><span class="bd ${est(q)}">${LB[est(q)]}</span></div>`}).join(''):'<p class="mu" style="padding:12px">No hay cotizaciones que coincidan.</p>';
 }
 
-function nueva(q){F=q?{...JSON.parse(JSON.stringify(q)),id:null,num:null,estado:'pendiente',hist:[],fecha:hoy()}:{sres:'',cliente:'',tel:'',interm:false,obra:'',items:[{desc:'',m1:'',m2:'',cant:1,precio:'',op:1}],totalizar:true,pago:'100% anticipado',metodo:'Efectivo o transferencia',dias:'',validez:15,iva:true,inst:false,dom:false,vendedor:'',obs:'',imgs:[],estado:'pendiente',hist:[]};if(q)F.items.forEach(nm);F.imgs=(F.imgs||[]).map(id=>({id}));nav('form')}
+function nueva(q){F=q?{...JSON.parse(JSON.stringify(q)),id:null,num:null,estado:'pendiente',hist:[],fecha:hoy()}:{sres:'',cliente:'',tel:'',tel2:'',interm:false,obra:'',items:[{desc:'',m1:'',m2:'',cant:1,precio:'',op:1}],totalizar:true,pago:'100% anticipado',metodo:'Efectivo o transferencia',dias:'',validez:15,iva:true,inst:false,dom:false,vendedor:'',obs:'',imgs:[],estado:'pendiente',hist:[]};if(q)F.items.forEach(nm);F.imgs=(F.imgs||[]).map(id=>({id}));nav('form')}
 const I=(l,k,t)=>`<div><label>${l}</label><input type="${t||'text'}" value="${E(F[k])}" oninput="F.${k}=this.value"></div>`;
 const itRow=(i,x)=>`<div class="it"><div><label>Producto</label><input value="${E(i.desc)}" oninput="F.items[${x}].desc=this.value"></div><div><label>Grosor</label><input list="gr${x}" placeholder="6 mm" value="${E(i.gr)}" oninput="F.items[${x}].gr=this.value"><datalist id="gr${x}">${['3 mm','4 mm','5 mm','6 mm','8 mm','10 mm','12 mm'].map(g=>`<option>${g}</option>`).join('')}</datalist></div><div><div style="display:flex;justify-content:space-between;align-items:center"><label>Medidas ${i.dia?'(diámetro)':'(ancho X alto)'}</label><label class="ck" style="margin:0 0 2px;font-size:12px;color:var(--mu)"><input type="checkbox" ${i.dia?'checked':''} onchange="F.items[${x}].dia=this.checked;ri()"> Redondo</label></div><div style="display:flex;gap:4px;align-items:center"><input inputmode="decimal" placeholder="${i.dia?'Diámetro':'Ancho'}" value="${E(i.m1)}" oninput="F.items[${x}].m1=this.value">${i.dia?'':`<span>X</span><input inputmode="decimal" placeholder="Alto" value="${E(i.m2)}" oninput="F.items[${x}].m2=this.value">`}<select style="width:auto" onchange="F.items[${x}].u=this.value">${['mts','cms','pulgadas'].map(u=>`<option ${(i.u||'mts')===u?'selected':''}>${u}</option>`).join('')}</select></div></div><div><label>Cant.</label><input type="number" value="${i.cant}" oninput="F.items[${x}].cant=this.value;tt()"></div><div><label>Precio unit.</label><input type="number" step="0.01" value="${i.precio}" oninput="F.items[${x}].precio=this.value;tt()"></div><div><label>Opción</label><input type="number" min="1" value="${i.op||1}" oninput="F.items[${x}].op=this.value||1;tt()"></div><button onclick="F.items.splice(${x},1);ri()" aria-label="Quitar">✕</button></div>`;
 function ri(){$('#its').innerHTML=F.items.map(itRow).join('');tt()}
 function tt(){const g=grupos(F),k=Object.keys(g);$('#tot').innerHTML=k.map(o=>(k.length>1?'Opción '+o+': ':'Total: ')+M(g[o].reduce((s,i)=>s+sub(i),0))).join('<br>')}
 function rm(){const e=$('#ims');if(!e)return;e.innerHTML=F.imgs.map((m,i)=>{const s=m.d||IMG[m.id];return `<div class="th">${s?`<img src="${s}">`:'<span class="mu">…</span>'}<button onclick="F.imgs.splice(${i},1);rm()" aria-label="Quitar">✕</button></div>`}).join('')||'<p class="h">Sin imágenes.</p>';F.imgs.forEach(m=>{if(m.id&&!m.d&&!IMG[m.id])getImg(m.id).then(rm).catch(()=>{})})}
 function rForm(){
- A.innerHTML=hdr(F.id?'Editar Cot.'+F.num:'Nueva cotización',1)+`<div class="card"><div style="margin-bottom:10px">${I('Sres. (opcional: empresa o persona)','sres')}</div><div class="g2">${I('Cliente / atención','cliente')}<div><label>Teléfono</label><input type="tel" inputmode="numeric" placeholder="2264-0238" value="${E(F.tel)}" oninput="F.tel=ftl(this.value);this.value=F.tel"></div></div>
+ A.innerHTML=hdr(F.id?'Editar Cot.'+F.num:'Nueva cotización',1)+`<div class="card"><div style="margin-bottom:10px">${I('Sres. (opcional: empresa o persona)','sres')}</div><div class="g2">${I('Cliente / atención','cliente')}<div><label>Teléfono</label><input type="tel" inputmode="numeric" placeholder="2264-0238" value="${E(F.tel)}" oninput="F.tel=ftl(this.value);this.value=F.tel"><input type="tel" inputmode="numeric" placeholder="Segundo teléfono (opcional)" style="margin-top:6px" value="${E(F.tel2)}" oninput="F.tel2=ftl(this.value);this.value=F.tel2"></div></div>
  <label class="ck"><input type="checkbox" ${F.interm?'checked':''} onchange="F.interm=this.checked"> Es intermediario (no tengo el nombre del cliente final)</label></div>
  <div class="card"><b>Productos</b><div id="its">${F.items.map(itRow).join('')}</div><button class="b2" onclick="F.items.push({desc:'',m1:'',m2:'',cant:1,precio:'',op:1});ri()">+ Agregar producto</button><div class="tot" id="tot"></div>
  <label class="ck"><input type="checkbox" ${F.totalizar?'checked':''} onchange="F.totalizar=this.checked"> Mostrar total en el documento</label><p class="h">Opción: deja 1 en todos si el cliente compra los productos juntos (se suman en un solo total). Si le das alternativas para que escoja una, ponles Opción 1, 2, 3… y cada opción se suma por separado.</p></div>
@@ -95,7 +96,7 @@ async function guardar(){
  msg('Guardando…');
  try{
   const ids=[];for(const m of F.imgs){if(!m.id){msg('Subiendo imágenes a Drive…');const r=await api('upimg',{data:m.d});m.id=r.id;IMG[r.id]=m.d}ids.push(m.id)}
-  const d={sres:(F.sres||'').trim(),cliente:F.cliente.trim(),tel:ft(F.tel),interm:F.interm,obra:F.inst?F.obra:'',items:F.items.filter(i=>i.desc.trim()),totalizar:F.totalizar,pago:F.pago,metodo:F.metodo||'Efectivo o transferencia',dias:F.dias,validez:+F.validez||15,iva:F.iva,inst:F.inst,dom:F.inst?false:F.dom,vendedor:F.vendedor,obs:F.obs,imgs:ids};
+  const d={sres:(F.sres||'').trim(),cliente:F.cliente.trim(),tel:ft(F.tel),tel2:ft(F.tel2),interm:F.interm,obra:F.inst?F.obra:'',items:F.items.filter(i=>i.desc.trim()),totalizar:F.totalizar,pago:F.pago,metodo:F.metodo||'Efectivo o transferencia',dias:F.dias,validez:+F.validez||15,iva:F.iva,inst:F.inst,dom:F.inst?false:F.dom,vendedor:F.vendedor,obs:F.obs,imgs:ids};
   if(F.id){await db.doc('cotizaciones/'+F.id).update(d);cur={...F,...d}}
   else{
    const ref=db.doc('meta/correlativo');let n=0;
@@ -111,7 +112,7 @@ async function guardar(){
 function rDet(){
  const q=cur,g=grupos(q),k=Object.keys(g),e=est(q);
  const fa=q.fAprob&&q.dias?addH(q.fAprob,+q.dias):null;
- A.innerHTML=hdr('',1)+`<div class="card"><div class="top" style="margin:0"><div><span class="n" style="font-size:17px">Cot.${q.num}</span> <span class="bd ${e}">${LB[e]}</span><br>${q.sres?'Sres. '+E(q.sres)+'<br>':''}<b>${E(q.cliente)}</b>${q.interm?' <span class="mu">(intermediario)</span>':''} · ${E(ft(q.tel))}<br><span class="mu">Creada ${fc(q.fecha)} · Vendedor: ${E(q.vendedor||'—')} · Válida hasta ${fc(add(q.fecha,+q.validez||15))}</span></div>
+ A.innerHTML=hdr('',1)+`<div class="card"><div class="top" style="margin:0"><div><span class="n" style="font-size:17px">Cot.${q.num}</span> <span class="bd ${e}">${LB[e]}</span><br>${q.sres?'Sres. '+E(q.sres)+'<br>':''}<b>${E(q.cliente)}</b>${q.interm?' <span class="mu">(intermediario)</span>':''} · ${E(tels(q))}<br><span class="mu">Creada ${fc(q.fecha)} · Vendedor: ${E(q.vendedor||'—')} · Válida hasta ${fc(add(q.fecha,+q.validez||15))}</span></div>
  <div><button onclick="editar()">Editar</button> <button onclick="nueva(cur)">Duplicar</button> <button class="b1" onclick="pdf(cur)">Descargar PDF</button> <button class="danger" onclick="borrar()">Eliminar</button></div></div></div>
  <div class="card"><b>Actualizar estado</b><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">${k.length>1?`<select id="op" style="width:auto"><option value="">¿Qué opción eligió?</option>${k.map(o=>`<option value="${o}" ${q.opAprob==o?'selected':''}>Opción ${o}</option>`).join('')}</select>`:''}
  <button class="ok ${q.estado==='aprobada'?'act':''}" onclick="setE('aprobada')">Aprobada</button><button class="${q.estado==='rechazada'?'act':''}" onclick="setE('rechazada')">Rechazada</button><button class="${q.estado==='pendiente'?'act':''}" onclick="setE('pendiente')">Pendiente</button></div><div class="err" id="msg"></div>${fa?`<p class="h">Entrega estimada: ${fl(fa)} (${q.dias} días hábiles desde la aprobación)</p>`:''}</div>
@@ -142,7 +143,7 @@ async function pdf(q){
  y+=9;F_('normal',12);T('San Salvador, '+fl(q.fecha),L,y);
  y+=8;F_('bold',12);T('Cot.'+q.num,R,y,{align:'right'});
  y+=10;if(q.sres){F_('normal',12);const sw=d.getTextWidth('Sres. ');T('Sres. ',L,y);F_('bold',12);T(q.sres,L+sw,y);y+=6.5}F_('normal',12);const aw=d.getTextWidth('Atención: ');T('Atención: ',L,y);F_('bold',12);T(q.cliente,L+aw,y);F_('normal',12);
- if(q.tel){y+=6.5;T('Tel: '+ft(q.tel),L,y)}if(q.obra){y+=6.5;T('Lugar de obra: '+q.obra,L,y)}
+ if(tels(q)){y+=6.5;T('Tel: '+tels(q),L,y)}if(q.obra){y+=6.5;T('Lugar de obra: '+q.obra,L,y)}
  y+=12;F_('bolditalic',12);T('Gustosamente le estamos cotizando nuestros siguientes productos:',L,y);y+=9;
  const g=grupos(q),k=Object.keys(g),chk=h=>{if(y+h>278){d.addPage();y=20}};
  k.forEach(o=>{
@@ -162,7 +163,7 @@ async function pdf(q){
  const B=[
   [[q.iva?'Precio incluye IVA':'Precio NO incluye IVA','bolditalic']],
   [[q.inst?'Precio incluye instalación':'Precio NO incluye instalación','bolditalic']],
-  q.inst?null:q.dom?[['Precio Incluye servicio a domicilio','bolditalic']]:[['Precio NO incluye servicio a domicilio','bolditalic']],
+  q.inst?null:q.dom?[['Incluye servicio a domicilio','bolditalic']]:[['NO incluye servicio a domicilio','bolditalic']],
   q.metodo&&[[PAGO[q.metodo]||q.metodo,'normal']],
   [['Forma de pago:  ','normal'],[q.pago,'bold']],
   q.dias&&[['Tiempo de entrega:  ','normal'],[q.dias+' días hábiles '+ent,'bold']],
