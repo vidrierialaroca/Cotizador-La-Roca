@@ -49,6 +49,11 @@ const med=i=>i.dia?(i.m1?i.m1+' '+(i.u||'mts')+' de diámetro':''):(i.m1!==undef
 const nm=i=>{if(i.m1===undefined){const m=(i.medidas||'').match(/([\d.,]+)\s*[xX×]\s*([\d.,]+)/);i.m1=m?m[1]:'';i.m2=m?m[2]:''}};
 const grupos=q=>{const g={};q.items.forEach(i=>{(g[i.op||1]=g[i.op||1]||[]).push(i)});return g};
 const LB={pendiente:'Pendiente',aprobada:'Aprobada',rechazada:'Rechazada',vencida:'Vencida'};
+// NOTAS PREDEFINIDAS: para agregar otra, copia una línea, cambia id (sin espacios), t (título corto) y x (texto que sale en el PDF)
+const NOTAS=[
+ {id:'led',t:'Espejo con luz LED',x:'No realizamos ningún tipo de trabajo eléctrico. El cliente debe proporcionar las conexiones eléctricas; nosotros únicamente instalamos el producto.'},
+];
+const tn=(id,c)=>{F.notas=(F.notas||[]).filter(x=>x!==id);if(c)F.notas.push(id)};
 let db,dl,uid,nx=8100,Q=[],loaded=false,view='list',cur=null,F=null,FQ='',FE='';
 const H=()=>uid||Math.random().toString(36).slice(2);
 const msg=t=>{const e=$('#msg');if(e)e.textContent=t};
@@ -71,7 +76,7 @@ function rows(){
   return `<div class="r" onclick="nav('det',Q.find(x=>x.id==='${q.id}'))"><span class="n">Cot.${q.num}</span><span style="flex:1;min-width:140px">${E(q.cliente)}${q.interm?' <span class="mu">(intermediario)</span>':''}<br><span class="mu">${fc(q.fecha)} · ${E(q.vendedor||'')}</span></span><span>${tt.length>1?'Desde '+M(Math.min(...tt)):M(tt[0])}</span><span class="bd ${est(q)}">${LB[est(q)]}</span></div>`}).join(''):'<p class="mu" style="padding:12px">No hay cotizaciones que coincidan.</p>';
 }
 
-function nueva(q){F=q?{...JSON.parse(JSON.stringify(q)),id:null,num:null,estado:'pendiente',hist:[],fecha:hoy()}:{sres:'',cliente:'',tel:'',tel2:'',interm:false,obra:'',items:[{desc:'',m1:'',m2:'',cant:1,precio:'',op:1}],totalizar:true,pago:'100% anticipado',metodo:'Efectivo o transferencia',dias:'',validez:15,iva:true,inst:false,dom:false,vendedor:'',obs:'',imgs:[],estado:'pendiente',hist:[]};if(q)F.items.forEach(nm);F.imgs=(F.imgs||[]).map(id=>({id}));nav('form')}
+function nueva(q){F=q?{...JSON.parse(JSON.stringify(q)),id:null,num:null,estado:'pendiente',hist:[],fecha:hoy()}:{sres:'',cliente:'',tel:'',tel2:'',interm:false,obra:'',items:[{desc:'',m1:'',m2:'',cant:1,precio:'',op:1}],totalizar:true,pago:'100% anticipado',metodo:'Efectivo o transferencia',dias:'',validez:15,iva:true,inst:false,dom:false,vendedor:'',obs:'',extra:'',notas:[],imgs:[],estado:'pendiente',hist:[]};if(q)F.items.forEach(nm);F.imgs=(F.imgs||[]).map(id=>({id}));nav('form')}
 const I=(l,k,t)=>`<div><label>${l}</label><input type="${t||'text'}" value="${E(F[k])}" oninput="F.${k}=this.value"></div>`;
 const itRow=(i,x)=>`<div class="it"><div><label>Producto</label><input value="${E(i.desc)}" oninput="F.items[${x}].desc=this.value"></div><div><label>Grosor</label><input list="gr${x}" placeholder="6 mm" value="${E(i.gr)}" oninput="F.items[${x}].gr=this.value"><datalist id="gr${x}">${['3 mm','4 mm','5 mm','6 mm','8 mm','10 mm','12 mm'].map(g=>`<option>${g}</option>`).join('')}</datalist></div><div><div style="display:flex;justify-content:space-between;align-items:center"><label>Medidas ${i.dia?'(diámetro)':'(ancho X alto)'}</label><label class="ck" style="margin:0 0 2px;font-size:12px;color:var(--mu)"><input type="checkbox" ${i.dia?'checked':''} onchange="F.items[${x}].dia=this.checked;ri()"> Redondo</label></div><div style="display:flex;gap:4px;align-items:center"><input inputmode="decimal" placeholder="${i.dia?'Diámetro':'Ancho'}" value="${E(i.m1)}" oninput="F.items[${x}].m1=this.value">${i.dia?'':`<span>X</span><input inputmode="decimal" placeholder="Alto" value="${E(i.m2)}" oninput="F.items[${x}].m2=this.value">`}<select style="width:auto" onchange="F.items[${x}].u=this.value">${['mts','cms','pulgadas'].map(u=>`<option ${(i.u||'mts')===u?'selected':''}>${u}</option>`).join('')}</select></div></div><div><label>Cant.</label><input type="number" value="${i.cant}" oninput="F.items[${x}].cant=this.value;tt()"></div><div><label>Precio unit.</label><input type="number" step="0.01" value="${i.precio}" oninput="F.items[${x}].precio=this.value;tt()"></div><div><label>Opción</label><input type="number" min="1" value="${i.op||1}" oninput="F.items[${x}].op=this.value||1;tt()"></div><button onclick="F.items.splice(${x},1);ri()" aria-label="Quitar">✕</button></div>`;
 function ri(){$('#its').innerHTML=F.items.map(itRow).join('');tt()}
@@ -88,6 +93,8 @@ function rForm(){
  ${F.inst?'':`<label class="ck"><input type="checkbox" ${F.dom?'checked':''} onchange="F.dom=this.checked"> Incluye servicio a domicilio</label>`}
  <label class="ck"><input type="checkbox" ${F.inst?'checked':''} onchange="F.inst=this.checked;if(F.inst)F.dom=false;rForm()"> Incluye instalación</label>
  ${F.inst?`<div style="margin-top:10px">${I('Lugar de obra (aproximado)','obra')}</div>`:''}
+ <div style="margin-top:10px"><label>Condiciones adicionales (una por línea; salen como viñetas con flecha)</label><textarea rows="2" oninput="F.extra=this.value">${E(F.extra)}</textarea></div>
+ <div style="margin-top:10px"><label>Notas predefinidas (salen en "Nota:")</label>${NOTAS.map(n=>`<label class="ck" style="align-items:flex-start"><input type="checkbox" ${(F.notas||[]).includes(n.id)?'checked':''} onchange="tn('${n.id}',this.checked)"><span><b>${E(n.t)}</b><br><span class="mu">${E(n.x)}</span></span></label>`).join('')}</div>
  <div style="margin-top:10px"><label>Observaciones</label><textarea rows="2" oninput="F.obs=this.value">${E(F.obs)}</textarea></div></div>
  <button class="b1" onclick="guardar()">Guardar cotización</button><div class="err" id="msg"></div>`;tt();rm();
 }
@@ -96,7 +103,7 @@ async function guardar(){
  msg('Guardando…');
  try{
   const ids=[];for(const m of F.imgs){if(!m.id){msg('Subiendo imágenes a Drive…');const r=await api('upimg',{data:m.d});m.id=r.id;IMG[r.id]=m.d}ids.push(m.id)}
-  const d={sres:(F.sres||'').trim(),cliente:F.cliente.trim(),tel:ft(F.tel),tel2:ft(F.tel2),interm:F.interm,obra:F.inst?F.obra:'',items:F.items.filter(i=>i.desc.trim()),totalizar:F.totalizar,pago:F.pago,metodo:F.metodo||'Efectivo o transferencia',dias:F.dias,validez:+F.validez||15,iva:F.iva,inst:F.inst,dom:F.inst?false:F.dom,vendedor:F.vendedor,obs:F.obs,imgs:ids};
+  const d={sres:(F.sres||'').trim(),cliente:F.cliente.trim(),tel:ft(F.tel),tel2:ft(F.tel2),interm:F.interm,obra:F.inst?F.obra:'',items:F.items.filter(i=>i.desc.trim()),totalizar:F.totalizar,pago:F.pago,metodo:F.metodo||'Efectivo o transferencia',dias:F.dias,validez:+F.validez||15,iva:F.iva,inst:F.inst,dom:F.inst?false:F.dom,vendedor:F.vendedor,obs:F.obs,extra:F.extra||'',notas:F.notas||[],imgs:ids};
   if(F.id){await db.doc('cotizaciones/'+F.id).update(d);cur={...F,...d}}
   else{
    const ref=db.doc('meta/correlativo');let n=0;
@@ -117,7 +124,7 @@ function rDet(){
  <div class="card"><b>Actualizar estado</b><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">${k.length>1?`<select id="op" style="width:auto"><option value="">¿Qué opción eligió?</option>${k.map(o=>`<option value="${o}" ${q.opAprob==o?'selected':''}>Opción ${o}</option>`).join('')}</select>`:''}
  <button class="ok ${q.estado==='aprobada'?'act':''}" onclick="setE('aprobada')">Aprobada</button><button class="${q.estado==='rechazada'?'act':''}" onclick="setE('rechazada')">Rechazada</button><button class="${q.estado==='pendiente'?'act':''}" onclick="setE('pendiente')">Pendiente</button></div><div class="err" id="msg"></div>${fa?`<p class="h">Entrega estimada: ${fl(fa)} (${q.dias} días hábiles desde la aprobación)</p>`:''}</div>
  <div class="card"><table><tr><th>Descripción</th><th>Medidas</th><th class="rt">Cant.</th><th class="rt">Precio</th></tr>${k.map(o=>(k.length>1?`<tr><td colspan="4"><b>Opción ${o}${q.opAprob==o?' · elegida':''}</b></td></tr>`:'')+g[o].map(i=>`<tr><td>${E(i.desc)}${i.gr?' · '+E(i.gr):''}</td><td>${E(med(i))}</td><td class="rt">${i.cant}</td><td class="rt">${M(sub(i))}</td></tr>`).join('')+(q.totalizar&&g[o].length>1?`<tr><td colspan="3" class="rt"><b>Precio total${k.length>1?' opción '+o:''}</b></td><td class="rt"><b>${M(g[o].reduce((s,i)=>s+sub(i),0))}</b></td></tr>`:'')).join('')}</table>
- <p class="mu">${[q.iva?'Incluye IVA':'NO incluye IVA',q.inst?'Incluye instalación':'NO incluye instalación',q.inst?'':(q.dom?'Incluye domicilio':'NO incluye domicilio')].filter(Boolean).join(' · ')} · ${q.metodo?E(q.metodo)+' · ':''}${E(q.pago)} · ${q.dias||'—'} días hábiles${q.obra?' · Obra: '+E(q.obra):''}</p>${q.obs?`<p>${E(q.obs)}</p>`:''}</div>
+ <p class="mu">${[q.iva?'Incluye IVA':'NO incluye IVA',q.inst?'Incluye instalación':'NO incluye instalación',q.inst?'':(q.dom?'Incluye domicilio':'NO incluye domicilio')].filter(Boolean).join(' · ')} · ${q.metodo?E(q.metodo)+' · ':''}${E(q.pago)} · ${q.dias||'—'} días hábiles${q.obra?' · Obra: '+E(q.obra):''}</p>${q.obs?`<p>${E(q.obs)}</p>`:''}${q.extra?'<p class="mu">'+E(q.extra).replace(/\n/g,'<br>')+'</p>':''}${(q.notas||[]).length?'<p class="mu">Notas: '+q.notas.map(id=>E((NOTAS.find(n=>n.id===id)||{}).t||id)).join(', ')+'</p>':''}</div>
  ${(q.imgs||[]).length?'<div class="card"><b>Imágenes de referencia</b><div class="ims" id="dims"></div></div>':''}
  <div class="card"><b>Historial</b>${(q.hist||[]).map(h=>`<div class="mu">${fc(h.f)} — ${LB[h.e]}${h.op?' (opción '+h.op+')':''}</div>`).join('')}</div>`;
  dimgs(q);
@@ -164,14 +171,16 @@ async function pdf(q){
   [[q.iva?'Precio incluye IVA':'Precio NO incluye IVA','bolditalic']],
   [[q.inst?'Precio incluye instalación':'Precio NO incluye instalación','bolditalic']],
   q.inst?null:q.dom?[['Incluye servicio a domicilio','bolditalic']]:[['NO incluye servicio a domicilio','bolditalic']],
+  ...String(q.extra||'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>[[s,'bolditalic']]),
   q.metodo&&[[PAGO[q.metodo]||q.metodo,'normal']],
   [['Forma de pago:  ','normal'],[q.pago,'bold']],
   q.dias&&[['Tiempo de entrega:  ','normal'],[q.dias+' días hábiles '+ent,'bold']],
   [['Cotización válida:  ','normal'],[(q.validez||15)+' días','bold']]
  ].filter(Boolean);
  chk(B.length*7+30);y+=2;
- B.forEach(p=>{d.setFillColor(0);d.triangle(L+4,y-2.8,L+4,y-0.2,L+6.8,y-1.5,'F');let x=L+10;p.forEach(([t,s])=>{F_(s,12);T(t,x,y);x+=d.getTextWidth(t)});y+=7});
- if(q.obs){const N=q.obs.split('\n').map(s=>s.trim()).filter(Boolean);y+=4;F_('bold',12);
+ B.forEach(p=>{const t=p.length===1?(F_(p[0][1],12),d.splitTextToSize(p[0][0],R-L-10)):null;chk(t?5.2*t.length+3:7);d.setFillColor(0);d.triangle(L+4,y-2.8,L+4,y-0.2,L+6.8,y-1.5,'F');if(t){F_(p[0][1],12);T(t,L+10,y);y+=5.2*t.length+1.8}else{let x=L+10;p.forEach(([s,st])=>{F_(st,12);T(s,x,y);x+=d.getTextWidth(s)});y+=7}});
+ const N=[...(q.notas||[]).map(id=>(NOTAS.find(n=>n.id===id)||{}).x).filter(Boolean),...String(q.obs||'').split('\n').map(s=>s.trim()).filter(Boolean)];
+ if(N.length){y+=4;F_('bold',12);
   if(N.length===1){const w=d.getTextWidth('Nota: ');chk(16);T('Nota: ',L,y);F_('normal',12);const t=d.splitTextToSize(N[0],R-L-w);T(t,L+w,y);y+=5.2*t.length}
   else if(N.length){chk(20);T('Nota:',L,y);y+=7;F_('normal',12);N.forEach(s=>{const t=d.splitTextToSize(s,R-L-10);chk(5.2*t.length+4);T('•',L+4,y);T(t,L+10,y);y+=5.2*t.length+1.5})}}
  y+=10;chk(20);F_('normal',12);T('Atendido por,',R,y,{align:'right'});F_('bold',12);T(q.vendedor||'',R,y+6,{align:'right'});
