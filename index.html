@@ -52,6 +52,7 @@ const LB={pendiente:'Pendiente',aprobada:'Aprobada',rechazada:'Rechazada',vencid
 // NOTAS PREDEFINIDAS: para agregar otra, copia una línea, cambia id (sin espacios), t (título corto) y x (texto que sale en el PDF)
 const NOTAS=[
  {id:'led',t:'Espejo con luz LED',x:'No realizamos ningún tipo de trabajo eléctrico. El cliente debe proporcionar las conexiones eléctricas; nosotros únicamente instalamos el producto.'},
+ {id:'desmontaje',t:'Nota desmontaje de ventanas',x:'Vidriería La Roca no se hace responsable por daños ocasionados durante el desmontaje y retiro de la ventana existente, incluyendo desprendimiento o deterioro de pintura, daños en repellos, acabados, fisuras, deformaciones o pandeo de paredes, daños a la propia ventana, así como cualquier otro daño en la estructura o elementos adyacentes a la ventana.'},
 ];
 const tn=(id,c)=>{F.notas=(F.notas||[]).filter(x=>x!==id);if(c)F.notas.push(id)};
 let db,dl,uid,nx=8100,Q=[],loaded=false,view='list',cur=null,F=null,FQ='',FE='';
@@ -239,3 +240,4 @@ db.collection('cotizaciones').onSnapshot(s=>{loaded=true;Q=s.docs.map(d=>({id:d.
 db.doc('meta/correlativo').onSnapshot(s=>{nx=s.exists?s.data().next:8100;const e=$('#nx');if(e)e.textContent='Cot.'+nx});
 sync();setInterval(sync,15000);
 </script></body></html>
+
